@@ -3,7 +3,8 @@ import './App.css';
 import { useEffect, useState } from 'react';
 
 import {
-    Paper, Rating, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography
+    Alert, Button, LinearProgress, Paper, Rating, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Typography
 } from '@mui/material';
 
 import { getMovies } from './api/api';
@@ -19,11 +20,20 @@ interface Movie {
 const avg = (numbers: number[]) => numbers.reduce((acc, i) => acc + i) / numbers.length
 
 
+enum AppError {
+  NO,
+  MovieFetchError,
+}
+
+
 function App() {
 
   const [movies, setMovies] = useState<Movie[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<AppError>(AppError.NO)
 
-  useEffect(() => {
+  const loadMovies = () => {
+    setIsLoading(true)
     getMovies().then(data => {
       setMovies(data.map(m => {
         return {
@@ -33,11 +43,25 @@ function App() {
           fimlCompanyId: m.filmCompanyId
         }
       }))
+      setIsLoading(false)
+      setError(AppError.NO)
+    }).catch(() => {
+      setError(AppError.MovieFetchError)
+      setIsLoading(false)
     })
+  }
+
+  useEffect(() => {
+    loadMovies()
   }, [])
 
   return (
     <div className="App" style={{padding: "15px"}}>
+      {isLoading && <LinearProgress />}
+      {error === AppError.MovieFetchError && <Alert severity='error'>
+        <span>Problem to fetch data</span>
+        <Button onClick={() => loadMovies()} variant='contained'>Retry</Button>
+      </Alert>}
       <TableContainer component={Paper}>
       <Table>
         <TableHead>
